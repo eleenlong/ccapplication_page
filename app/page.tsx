@@ -18,8 +18,8 @@ type CardItem = {
 };
 
 const categories: { id: Category; label: string; eyebrow: string }[] = [
-  { id: "vip", label: "超V专属", eyebrow: "平台专属权益" },
-  { id: "premium", label: "高端权益", eyebrow: "品质生活与出行" },
+  { id: "vip", label: "腾讯联名", eyebrow: "专属联名权益" },
+  { id: "premium", label: "白金权益", eyebrow: "额度与高端权益" },
   { id: "daily", label: "日常优选", eyebrow: "轻松入门免年费" },
 ];
 
@@ -49,6 +49,30 @@ const cards: CardItem[] = [
     tone: "blue",
   },
   {
+    id: "v-video",
+    category: "vip",
+    bank: "浦发银行",
+    name: "腾讯视频联名卡",
+    badge: "影音优选",
+    reason: "适合腾讯视频高频用户，会员权益更容易使用",
+    benefits: ["视频VIP", "观影优惠", "首年免年费"],
+    fee: "首年免年费",
+    eligible: true,
+    tone: "violet",
+  },
+  {
+    id: "v-qq",
+    category: "vip",
+    bank: "中信银行",
+    name: "QQ联名信用卡",
+    badge: "会员特权",
+    reason: "QQ会员权益与日常消费返现可以兼顾",
+    benefits: ["QQ会员特权", "消费返现", "积分加速"],
+    fee: "消费6笔免次年",
+    eligible: true,
+    tone: "mint",
+  },
+  {
     id: "v-old",
     category: "vip",
     bank: "招商银行",
@@ -60,6 +84,19 @@ const cards: CardItem[] = [
     eligible: false,
     restriction: "仅限超V系列一卡用户办理",
     tone: "charcoal",
+  },
+  {
+    id: "v-repeat",
+    category: "vip",
+    bank: "光大银行",
+    name: "微信联名信用卡",
+    badge: "暂不可办理",
+    reason: "你已办理过该联名产品",
+    benefits: ["微信支付积分", "专属权益", "消费返现"],
+    fee: "首年免年费",
+    eligible: false,
+    restriction: "同一用户不可重复申请该产品",
+    tone: "sky",
   },
   {
     id: "p-platinum",
@@ -84,6 +121,30 @@ const cards: CardItem[] = [
     fee: "年费¥480",
     eligible: true,
     tone: "navy",
+  },
+  {
+    id: "p-hotel",
+    category: "premium",
+    bank: "广发银行",
+    name: "臻尚酒店白金卡",
+    badge: "酒店优选",
+    reason: "适合高频酒店预订与品质出行用户",
+    benefits: ["酒店礼遇", "延迟退房", "消费积分"],
+    fee: "年费¥480",
+    eligible: true,
+    tone: "sand",
+  },
+  {
+    id: "p-family",
+    category: "premium",
+    bank: "平安银行",
+    name: "悦享家庭白金卡",
+    badge: "家庭权益",
+    reason: "亲子、健康和出行权益覆盖更均衡",
+    benefits: ["亲子权益", "健康服务", "接送机"],
+    fee: "年费¥600",
+    eligible: true,
+    tone: "coral",
   },
   {
     id: "p-limit",
@@ -123,6 +184,30 @@ const cards: CardItem[] = [
     tone: "mint",
   },
   {
+    id: "d-food",
+    category: "daily",
+    bank: "招商银行",
+    name: "周末餐饮卡",
+    badge: "餐饮优选",
+    reason: "周末餐饮消费较多时更容易获得优惠",
+    benefits: ["餐饮折扣", "周末返现", "积分兑换"],
+    fee: "消费6笔免次年",
+    eligible: true,
+    tone: "violet",
+  },
+  {
+    id: "d-shop",
+    category: "daily",
+    bank: "中信银行",
+    name: "悦购生活卡",
+    badge: "购物返现",
+    reason: "覆盖商超、电商与生活缴费等常用场景",
+    benefits: ["电商返现", "商超积分", "生活缴费"],
+    fee: "首年免年费",
+    eligible: true,
+    tone: "blue",
+  },
+  {
     id: "d-one",
     category: "daily",
     bank: "广发银行",
@@ -156,6 +241,9 @@ export default function Home() {
   const [selectedBank, setSelectedBank] = useState("全部银行");
   const [selectedBenefit, setSelectedBenefit] = useState("全部权益");
   const [aiMessage, setAiMessage] = useState(aiReplies.choose);
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiAsked, setAiAsked] = useState(false);
+  const [aiRecommended, setAiRecommended] = useState(false);
   const [toast, setToast] = useState("");
   const touchStart = useRef<number | null>(null);
   const suppressHeroClick = useRef(false);
@@ -197,6 +285,30 @@ export default function Home() {
     setSelectedBenefit("全部权益");
   }
 
+  function selectCategory(category: Category) {
+    setActive(category);
+    setSelectedBank("全部银行");
+    setSelectedBenefit("全部权益");
+  }
+
+  function askAi(message: string, reply = aiReplies.choose) {
+    setAiQuestion(message);
+    setAiMessage(reply);
+    setAiAsked(true);
+    setAiRecommended(true);
+  }
+
+  function submitAiQuestion() {
+    const question = aiQuestion.trim();
+    if (!question) return;
+    const reply = /年费|值得/.test(question)
+      ? aiReplies.fee
+      : /对比|比较|区别/.test(question)
+        ? aiReplies.compare
+        : aiReplies.choose;
+    askAi(question, reply);
+  }
+
   function handleHeroTouchEnd(clientX: number) {
     if (touchStart.current === null) return;
     const distance = clientX - touchStart.current;
@@ -225,21 +337,15 @@ export default function Home() {
           <small>•••• 2048</small>
         </div>
         <div className="card-info">
-          <div className="badge-row">
-            <span className={card.eligible ? "match-badge" : "blocked-badge"}>
-              {card.eligible && rank ? `推荐 ${rank} · ` : ""}{card.badge}
-            </span>
-            <span className="arrow">›</span>
-          </div>
+          <span className="compact-bank">{card.bank}</span>
           <h3>{card.name}</h3>
-          <p className="reason"><span>✦</span>{card.reason}</p>
           <div className="benefits">
-            {card.benefits.map((benefit) => <span key={benefit}>{benefit}</span>)}
+            {card.benefits.slice(0, 2).map((benefit) => <span key={benefit}>{benefit}</span>)}
           </div>
-          <div className="fee-line">
-            <span>{card.fee}</span>
-            <button>{card.eligible ? "查看详情" : "查看原因"}</button>
-          </div>
+        </div>
+        <div className="compact-status">
+          <span>{card.eligible ? "可申请" : "暂不可办理"}</span>
+          <b>›</b>
         </div>
         {!card.eligible && <div className="disabled-overlay">当前不可办理</div>}
       </article>
@@ -275,40 +381,116 @@ export default function Home() {
             <small>VISA · •••• 2048</small>
           </div>
           <div className="hero-copy">
-            <span className="eyebrow">{activeLabel} · 为你优先推荐</span>
+            <span className="eyebrow">为你推荐</span>
             <h1>{topCard.name}</h1>
-            <p>{topCard.reason}</p>
+            <p>{topCard.benefits[0]} · {topCard.fee}</p>
             <div className="hero-benefits">
               {topCard.benefits.map((benefit) => <span key={benefit}>{benefit}</span>)}
             </div>
-            <div className="hero-footer"><span>{topCard.fee}</span><b>查看详情 ›</b></div>
+            <div className="hero-footer"><b>立即办卡</b></div>
           </div>
         </section>
-
-        <div className="carousel-meta">
-          <span>{activeLabel}</span>
-          <div>{categories.map((category) => <i key={category.id} className={active === category.id ? "active" : ""} />)}</div>
-          <small>左右滑动切换专区</small>
-        </div>
-
-        <button className="ai-entry" onClick={() => setAiOpen(true)}>
-          <span className="ai-spark">✦</span>
-          <span><strong>问问 AI 选卡助手</strong><small>结合你的需求，帮你选卡、比卡、看权益</small></span>
-          <b>›</b>
+        <button
+          className="hero-apply"
+          onClick={() => showToast("已进入银行申请链路（Demo）")}
+        >
+          免费办卡
         </button>
 
-        <nav className="filter-bar" aria-label="卡片筛选">
-          <button onClick={() => setAllOpen(true)}><strong>全部信用卡</strong><small>查看全部</small></button>
-          <button onClick={() => setFilterOpen("bank")}><strong>银行⌄</strong><small>{selectedBank}</small></button>
-          <button onClick={() => setFilterOpen("benefit")}><strong>权益⌄</strong><small>{selectedBenefit}</small></button>
+        <div className="carousel-meta">
+          <span>为你推荐</span>
+          <div>{categories.map((category) => <i key={category.id} className={active === category.id ? "active" : ""} />)}</div>
+          <small>{categories.find((item) => item.id === active)?.eyebrow}</small>
+        </div>
+
+        <nav className="category-tabs" aria-label="专区切换">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              className={active === category.id ? "active" : ""}
+              onClick={() => selectCategory(category.id)}
+            >
+              <span>{category.label}</span>
+              <small>{category.eyebrow}</small>
+            </button>
+          ))}
         </nav>
 
-        <section className="recommendation-head neutral">
+        <button className={`ai-entry ${aiOpen ? "expanded" : ""}`} onClick={() => setAiOpen((open) => !open)}>
+          <span className="ai-spark">✦</span>
+          <span><strong>问问 AI 选卡助手</strong><small>结合你的需求，帮你选卡、比卡、看权益</small></span>
+          <b>{aiOpen ? "⌃" : "›"}</b>
+        </button>
+
+        {aiOpen && (
+          <section className="ai-inline" aria-label="AI 选卡助手">
+            <div className="ai-context">
+              <span>正在浏览「{activeLabel}」专区</span>
+              <small>已结合你的可办资格与当前筛选</small>
+            </div>
+
+            {!aiAsked ? (
+              <>
+                <div className="ai-welcome">
+                  <div className="ai-avatar">✦</div>
+                  <div>
+                    <strong>大黑</strong>
+                    <p>告诉我你常用的消费场景，或者直接选一个问题，我会从当前专区里帮你挑一张真正适合的卡。</p>
+                  </div>
+                </div>
+                <div className="quick-prompts inline-prompts">
+                  <button onClick={() => askAi("直接帮我选一张")}>直接帮我选</button>
+                  <button onClick={() => askAi("比较两张卡的区别", aiReplies.compare)}>比较两张卡</button>
+                  <button onClick={() => askAi("年费卡值得办吗？", aiReplies.fee)}>年费卡值得吗</button>
+                </div>
+              </>
+            ) : (
+              <div className="ai-conversation">
+                <div className="user-bubble">{aiQuestion}</div>
+                <div className="agent-label"><span>✦</span><strong>大黑</strong></div>
+                <div className="assistant-bubble">
+                  <p>{aiMessage}</p>
+                </div>
+                <article className="ai-result-card">
+                  <div className="ai-result-art">V</div>
+                  <div>
+                    <span>首选推荐</span>
+                    <strong>{topCard.name}</strong>
+                    <small>{topCard.bank} · {topCard.fee}</small>
+                    <div className="ai-result-benefits">
+                      {topCard.benefits.slice(0, 2).map((benefit) => <i key={benefit}>{benefit}</i>)}
+                    </div>
+                  </div>
+                  <div className="ai-result-actions">
+                    <button onClick={() => openCard(topCard)}>查看详情</button>
+                    <button className="apply" onClick={() => showToast("已进入银行申请链路（Demo）")}>立即办卡</button>
+                  </div>
+                </article>
+                <p className="ai-sync-note">已将这张卡放到下方「为你精选」首位</p>
+              </div>
+            )}
+
+            <div className="inline-chat-input">
+              <span>◉</span>
+              <input
+                value={aiQuestion}
+                onChange={(event) => setAiQuestion(event.target.value)}
+                onKeyDown={(event) => { if (event.key === "Enter") submitAiQuestion(); }}
+                placeholder="还想了解什么信用卡问题？"
+              />
+              <button onClick={submitAiQuestion}>↑</button>
+            </div>
+          </section>
+        )}
+
+        <section className="list-toolbar" aria-label="卡片筛选">
           <div>
-            <span className="section-kicker">更多选择</span>
-            <h2>更多{activeLabel}卡片</h2>
+            <span className="green-dot" />
+            <h2>为你精选</h2>
+            {aiRecommended && <small>推荐已更新</small>}
           </div>
-          <span className="result-count">{eligibleCards.length} 张可办理</span>
+          <button onClick={() => setFilterOpen("bank")}>银行⌄</button>
+          <button onClick={() => setFilterOpen("benefit")}>权益⌄</button>
         </section>
 
         <section className="card-list">
@@ -338,11 +520,10 @@ export default function Home() {
 
       {toast && <div className="toast">{toast}</div>}
 
-      {(aiOpen || allOpen || blockedCard || selectedCard || filterOpen) && (
+      {(allOpen || blockedCard || selectedCard || filterOpen) && (
         <div
           className="scrim"
           onClick={() => {
-            setAiOpen(false);
             setAllOpen(false);
             setBlockedCard(null);
             setSelectedCard(null);
@@ -350,32 +531,6 @@ export default function Home() {
           }}
         />
       )}
-
-      <aside className={`bottom-sheet ai-sheet ${aiOpen ? "open" : ""}`}>
-        <div className="sheet-handle" />
-        <div className="ai-title">
-          <div className="ai-avatar">✦</div>
-          <div><strong>AI 选卡助手</strong><span>已带入「{activeLabel}」浏览上下文</span></div>
-          <button onClick={() => setAiOpen(false)}>×</button>
-        </div>
-        <div className="chat">
-          <div className="assistant-bubble">
-            <span>推荐结论</span>
-            <p>{aiMessage}</p>
-          </div>
-          <div className="quick-prompts">
-            <button onClick={() => setAiMessage(aiReplies.choose)}>直接帮我选</button>
-            <button onClick={() => setAiMessage(aiReplies.compare)}>比较两张卡</button>
-            <button onClick={() => setAiMessage(aiReplies.fee)}>年费卡值得吗</button>
-          </div>
-          <div className="mini-recommendation">
-            <div className="mini-card">V</div>
-            <div><strong>超V联名金卡</strong><span>首年免年费 · 每月会员</span></div>
-            <button onClick={() => { setAiOpen(false); openCard(cards[0]); }}>去看看</button>
-          </div>
-        </div>
-        <div className="chat-input"><span>继续问：我最常用的是外卖和视频会员…</span><button>↑</button></div>
-      </aside>
 
       <aside className={`bottom-sheet all-sheet ${allOpen ? "open" : ""}`}>
         <div className="sheet-handle" />
