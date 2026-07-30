@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI 信用卡对比 Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --green: #12bd83;
+      --green-dark: #079a68;
+      --mint: #e8fbf4;
+      --ink: #181b1f;
+      --sub: #6f747a;
+      --line: #eceff1;
+      --bg: #f2f4f5;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #e9ecee;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    button { font: inherit; }
+    .phone {
+      position: relative;
+      width: min(100vw, 390px);
+      height: min(100vh, 844px);
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: 0 24px 80px rgba(20, 30, 35, .18);
+    }
+    .status {
+      height: 48px;
+      padding: 16px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      color: #7e8488;
+      font-weight: 650;
+      font-size: 14px;
+    }
+    .home {
+      padding: 30px 26px;
+      opacity: .42;
+    }
+    .home h1 { margin: 0 0 8px; font-size: 25px; line-height: 1.35; }
+    .home p { margin: 0 0 18px; color: var(--sub); }
+    .fake-chip {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 20px;
+      color: var(--green-dark);
+      background: white;
+    }
+    .scrim {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,.52);
+      backdrop-filter: blur(1px);
+    }
+    .sheet {
+      position: absolute;
+      inset: 112px 0 0;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      border-radius: 28px 28px 0 0;
+      box-shadow: 0 -8px 30px rgba(40, 53, 59, .08);
+      transition: transform .34s ease;
+    }
+    .sheet-head {
+      flex: 0 0 auto;
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .head-row { display: flex; align-items: center; justify-content: space-between; }
+    .sheet h2 { margin: 0; font-size: 25px; letter-spacing: -.5px; }
+    .close {
+      border: 0; background: none; color: #5e6267;
+      font-size: 28px; line-height: 1; cursor: pointer;
+    }
+    .instruction {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--sub);
+      font-size: 13px;
+    }
+    .count { color: var(--green-dark); font-weight: 650; }
+    .list {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding-bottom: 104px;
+    }
+    .card-item {
+      width: 100%;
+      min-height: 164px;
+      padding: 22px 20px 22px 18px;
+      display: grid;
+      grid-template-columns: 24px 90px 1fr;
+      gap: 10px;
+      align-items: center;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    .check {
+      width: 22px; height: 22px;
+      display: grid; place-items: center;
+      border: 1.5px solid #cdd2d5;
+      border-radius: 50%;
+      color: transparent;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .selected .check { color: white; border-color: var(--green); background: var(--green); }
+    .card-art {
+      position: relative;
+      width: 72px;
+      height: 108px;
+      border-radius: 7px;
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(39, 45, 67, .18);
+    }
+    .card-art::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(140deg, rgba(255,255,255,.22), transparent 38%),
+                  repeating-linear-gradient(125deg, transparent 0 13px, rgba(255,255,255,.12) 14px 17px);
+    }
+    .card-art::after {
+      content: "VISA";
+      position: absolute; right: 6px; bottom: 7px;
+      color: white; font-size: 9px; font-weight: 800; font-style: italic;
+    }
+    .purple { background: linear-gradient(145deg, #0d6fc5, #5d176f 70%, #161542); }
+    .silver { background: linear-gradient(145deg, #dfe6e7, #9eb6b4); }
+    .pink { background: linear-gradient(145deg, #fb849e, #f6b4c2); }
+    .card-copy h3 { margin: 0 0 11px; font-size: 18px; line-height: 1.25; }
+    .benefit { margin: 5px 0; color: #45494d; font-size: 14px; line-height: 1.25; }
+    .benefit span { color: #a7adb0; margin-right: 7px; }
+    .footer {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+      background: linear-gradient(to top, white 75%, rgba(255,255,255,.94));
+      box-shadow: 0 -8px 26px rgba(30, 40, 44, .06);
+    }
+    .compare-btn {
+      width: 100%; height: 54px;
+      border: 0; border-radius: 15px;
+      color: #a9afb1; background: #edf0f1;
+      font-weight: 700; font-size: 17px;
+      transition: .2s ease;
+    }
+    .compare-btn.ready {
+      color: white;
+      background: linear-gradient(100deg, #10c187, #08aa75);
+      box-shadow: 0 10px 24px rgba(18, 189, 131, .25);
+      cursor: pointer;
+    }
+    .result {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      background: #f5f7f7;
+      transform: translateX(100%);
+      transition: transform .36s cubic-bezier(.2,.8,.2,1);
+    }
+    .result.show { transform: translateX(0); }
+    .result-nav {
+      height: 88px;
+      padding: 48px 18px 13px;
+      display: grid;
+      grid-template-columns: 50px 1fr 50px;
+      align-items: center;
+      background: white;
+      border-bottom: 1px solid var(--line);
+    }
+    .back { border: 0; background: none; font-size: 27px; text-align: left; cursor: pointer; }
+    .result-nav strong { text-align: center; font-size: 18px; }
+    .result-body { overflow-y: auto; padding: 18px 16px 132px; }
+    .chat-time {
+      margin: 0 0 18px;
+      color: #a0a5a8;
+      font-size: 12px;
+      text-align: center;
+    }
+    .chat-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+    .avatar {
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      color: white;
+      background: linear-gradient(135deg, #13c78c, #078669);
+      box-shadow: 0 5px 12px rgba(7, 134, 105, .18);
+    }
+    .bubble {
+      max-width: calc(100% - 44px);
+      padding: 15px 16px;
+      border-radius: 5px 18px 18px 18px;
+      background: white;
+      box-shadow: 0 3px 14px rgba(36, 49, 54, .05);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .bubble p { margin: 0 0 12px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble strong { color: #087d60; }
+    .thinking {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 86px;
+      color: var(--sub);
+    }
+    .thinking i {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #94aaa3;
+      animation: blink 1.1s infinite ease-in-out;
+    }
+    .thinking i:nth-child(2) { animation-delay: .16s; }
+    .thinking i:nth-child(3) { animation-delay: .32s; }
+    @keyframes blink {
+      0%, 70%, 100% { opacity: .28; transform: translateY(0); }
+      35% { opacity: 1; transform: translateY(-3px); }
+    }
+    .answer { display: none; }
+    .answer.show { display: block; }
+    .thinking-wrap.hide { display: none; }
+    .suggestion-title {
+      margin: 6px 0 10px 44px;
+      color: #8b9194;
+      font-size: 12px;
+    }
+    .suggestions {
+      margin-left: 44px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .suggestions button {
+      padding: 9px 12px;
+      border: 1px solid #cceee2;
+      border-radius: 18px;
+      color: #087d60;
+      background: #f3fcf8;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .ask {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+      display: flex; gap: 8px;
+      background: white;
+      box-shadow: 0 -8px 24px rgba(35, 45, 50, .06);
+    }
+    .ask input {
+      min-width: 0; flex: 1; height: 48px;
+      padding: 0 15px;
+      border: 1px solid #dfe4e4;
+      border-radius: 14px; outline: none; background: #f7f8f8;
+    }
+    .ask button {
+      width: 72px; border: 0; border-radius: 14px;
+      color: white; background: var(--green); font-weight: 700; cursor: pointer;
+    }
+    .toast {
+      position: absolute; left: 50%; bottom: 92px; z-index: 9;
+      transform: translate(-50%, 12px);
+      padding: 10px 14px; border-radius: 12px;
+      color: white; background: rgba(20,25,27,.86);
+      font-size: 13px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: .25s;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    @media (max-height: 720px) {
+      .sheet { inset: 78px 0 0; }
+      .card-item { min-height: 142px; padding-top: 16px; padding-bottom: 16px; }
+      .card-art { height: 94px; width: 64px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" aria-label="AI信用卡对比交互演示">
+    <div class="status"><span>9:41</span><span>▮▮▮　⌁　▰</span></div>
+    <section class="home">
+      <h1>根据你的偏好选择<br>找到以下24张信用卡</h1>
+      <p>我的收藏</p>
+      <span class="fake-chip">▣ 办卡助手　免年费、腾讯权益…</span>
+    </section>
+    <div class="scrim"></div>
+
+    <section class="sheet" id="picker">
+      <header class="sheet-head">
+        <div class="head-row">
+          <h2>我的收藏</h2>
+          <button class="close" aria-label="关闭">×</button>
+        </div>
+        <div class="instruction">
+          <span>请选择 2 张卡，让 AI 帮你分析</span>
+          <span class="count" id="count">已选 0/2</span>
+        </div>
+      </header>
+
+      <div class="list" id="cardList">
+        <button class="card-item" data-name="交行超V返现组合卡" aria-pressed="false">
+          <span class="check">✓</span>
+          <span class="card-art purple"></span>
+          <span class="card-copy">
+            <h3>交行超V返现组合卡</h3>
+            <p class="benefit"><span>◷</span>VISA卡＋银联卡</p>
+            <p class="benefit"><span>▣</span>首年免年费</p>
+            <p class="benefit"><span>◴</span>每周五超市、加油立减</p>
+          </span>
+        </button>
+        <button class="card-item" data-name="建行龙卡腾讯超V卡" aria-pressed="false">
+          <span class="check">✓</span>
+          <span class="card-art silver"></span>
+          <span class="card-copy">
+            <h3>建行龙卡腾讯超V卡</h3>
+            <p class="benefit"><span>▣</span>全年240元腾讯权益</p>
+            <p class="benefit"><span>▣</span>交易10笔免当年年费</p>
+            <p class="benefit"><span>▣</span>微信支付计积分</p>
+          </span>
+        </button>
+        <button class="card-item" data-name="中信超V粉色幸运卡" aria-pressed="false">
+          <span class="check">✓</span>
+          <span class="card-art pink"></span>
+          <span class="card-copy">
+            <h3>中信超V粉色幸运卡</h3>
+            <p class="benefit"><span>▣</span>全年240元腾讯权益</p>
+            <p class="benefit"><span>▣</span>首年免年费</p>
+            <p class="benefit"><span>▣</span>微信支付计积分</p>
+          </span>
+        </button>
+      </div>
+
+      <footer class="footer">
+        <button class="compare-btn" id="compareBtn" disabled>请选择 2 张卡进行对比</button>
+      </footer>
+    </section>
+
+    <section class="result" id="result">
+      <header class="result-nav">
+        <button class="back" id="backBtn" aria-label="返回">‹</button>
+        <strong>AI 帮你对比</strong>
+        <span></span>
+      </header>
+      <div class="result-body">
+        <p class="chat-time">AI 正在根据卡片权益进行分析</p>
+        <div class="chat-row thinking-wrap" id="thinking">
+          <span class="avatar">✦</span>
+          <div class="bubble thinking">
+            <span>正在对比</span><i></i><i></i><i></i>
+          </div>
+        </div>
+        <div class="answer" id="answer">
+          <div class="chat-row">
+            <span class="avatar">✦</span>
+            <div class="bubble">
+              <p>这两张卡的优势方向不太一样。</p>
+              <p><strong>交行超V返现组合卡</strong>更偏向日常返现，周五在超市、加油等场景有立减。如果你平时开车较多，或者商超消费金额较高，这张卡更容易获得实际优惠，而且首年免年费。</p>
+              <p><strong>建行龙卡腾讯超V卡</strong>更偏向腾讯权益，全年可享约240元腾讯会员权益，微信支付还能累计积分。年费需要完成10笔交易减免，但日常使用基本比较容易达到。</p>
+              <p>综合来看，如果你经常使用<strong>微信支付和腾讯会员</strong>，我更推荐建行龙卡；如果你更看重<strong>加油、商超返现</strong>，则交行卡更合适。</p>
+            </div>
+          </div>
+          <p class="suggestion-title">你还可以继续问</p>
+          <div class="suggestions">
+            <button type="button">哪张更容易免年费？</button>
+            <button type="button">我经常加油，选哪张？</button>
+          </div>
+        </div>
+      </div>
+      <form class="ask" id="askForm">
+        <input id="question" placeholder="继续问 AI，例如：哪张更省年费？" />
+        <button>发送</button>
+      </form>
+    </section>
+    <div class="toast" id="toast">AI 正在结合你的问题继续分析…</div>
+  </main>
+
+  <script>
+    const items = [...document.querySelectorAll(".card-item")];
+    const count = document.getElementById("count");
+    const compareBtn = document.getElementById("compareBtn");
+    const result = document.getElementById("result");
+    const selected = new Set();
+
+    function render() {
+      items.forEach(item => {
+        const active = selected.has(item.dataset.name);
+        item.classList.toggle("selected", active);
+        item.setAttribute("aria-pressed", String(active));
+      });
+      count.textContent = `已选 ${selected.size}/2`;
+      const ready = selected.size === 2;
+      compareBtn.disabled = !ready;
+      compareBtn.classList.toggle("ready", ready);
+      compareBtn.textContent = ready ? "✦ AI 对比已选卡片（2）" : "请选择 2 张卡进行对比";
+    }
+
+    items.forEach(item => item.addEventListener("click", () => {
+      const name = item.dataset.name;
+      if (selected.has(name)) selected.delete(name);
+      else if (selected.size < 2) selected.add(name);
+      else {
+        const first = selected.values().next().value;
+        selected.delete(first);
+        selected.add(name);
+      }
+      render();
+    }));
+
+    compareBtn.addEventListener("click", () => {
+      if (selected.size !== 2) return;
+      result.classList.add("show");
+      document.getElementById("thinking").classList.remove("hide");
+      document.getElementById("answer").classList.remove("show");
+      setTimeout(() => {
+        document.getElementById("thinking").classList.add("hide");
+        document.getElementById("answer").classList.add("show");
+      }, 900);
+    });
+    document.getElementById("backBtn").addEventListener("click", () => result.classList.remove("show"));
+
+    document.getElementById("askForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const input = document.getElementById("question");
+      if (!input.value.trim()) return;
+      const toast = document.getElementById("toast");
+      toast.classList.add("show");
+      input.value = "";
+      setTimeout(() => toast.classList.remove("show"), 1800);
+    });
+    document.querySelectorAll(".suggestions button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.getElementById("question").value = button.textContent;
+        document.getElementById("question").focus();
+      });
+    });
+    render();
+  </script>
+</body>
+</html>
